@@ -1,0 +1,44 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+#--assentials--
+matplotlib = "*"
+numpy = "*"
+pandas = "*"
+PyYAML = "*"
+rich = "*"
+tables = "*"
+
+# -- ML --
+tensorboard = "*"
+pytorch-lightning = "*"
+torchvision = "*"
+dacite = "*"
+seaborn = "*"
+sklearn = "*"
+scikit-learn = "*"
+wandb = "*"
+
+# --hydra--
+hydra-core = "*"
+hydra-colorlog = "*"
+hydra-optuna-sweeper = "*"
+
+# -- random stuff
+python-dotenv = "*"
+pytest = "*"
+sh = "*"
+jupyterlab = "*"
+pudb = "*"
+pre-commit = "*"
+pipblack = "*"
+isort = "*"
+flake8 = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"

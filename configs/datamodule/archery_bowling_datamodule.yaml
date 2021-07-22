@@ -1,0 +1,31 @@
+_target_: src.datamodules.archery_bowling_datamodule.ArcheryBowlingDataModule
+
+data_root: ${data_dir} # infer from config.yaml
+test: True              # load and compute files from session2
+val_ratio: 0.2          # try save some files from session1 for validation. (evenly distributed)
+batch_size: 10000
+window_size: 10
+normalization: 'HeightNormalization'
+szenario: 'Archery'
+features:
+  - "CenterEyeAnchor_pos_X"             #HMD
+  - "CenterEyeAnchor_pos_Y"
+  - "CenterEyeAnchor_pos_Z"
+  - "CenterEyeAnchor_euler_X"
+  - "CenterEyeAnchor_euler_Y"
+  - "CenterEyeAnchor_euler_Z"
+  - "LeftVirtualHand_pos_X"             #Left Hand
+  - "LeftVirtualHand_pos_Y"
+  - "LeftVirtualHand_pos_Z"
+  - "LeftControllerAnchor_euler_X"
+  - "LeftControllerAnchor_euler_Y"
+  - "LeftControllerAnchor_euler_Z"
+  - "RightVirtualHand_pos_X"            #Right Hand
+  - "RightVirtualHand_pos_Y"
+  - "RightVirtualHand_pos_Z"
+  - "RightControllerAnchor_euler_X"
+  - "RightControllerAnchor_euler_Y"
+  - "RightControllerAnchor_euler_Z"
+identifier_col: 'seq_id'            # used to identify individual sequences. gets computed if not found in data
+label_col: 'ParticipantID'
+num_workers: 4
