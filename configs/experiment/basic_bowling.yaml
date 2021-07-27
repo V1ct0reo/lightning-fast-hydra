@@ -1,0 +1,16 @@
+# @package _global_
+
+defaults:
+  - override /trainer: archery_bowling_trainer.yaml
+  - override /model: archery_bowling_model.yaml
+  - override /datamodule: archery_bowling_datamodule.yaml
+  - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
+  - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
+
+
+datamodule:
+  szenario: 'Bowling'
+
+trainer:
+  gpus:
+    - 1

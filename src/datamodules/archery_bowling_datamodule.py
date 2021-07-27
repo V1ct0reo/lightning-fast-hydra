@@ -6,7 +6,6 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from torchvision.transforms import transforms
 
-from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
 from src.utils.utils import get_logger
 
 
@@ -21,7 +20,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                  normalisation: str = 'WithoutNormalization',
                  szenario: str = 'Archery',
                  features: List[str] = ['CenterEyeAnchor_pos_X', 'LeftVirtualHand_pos_X', 'RightVirtualHand_pos_X'],
-                 identifier_col: str = 'seq_id', label_col: str = 'ParticipantID',
+                 identifier_col: str = 'seq_id',
+                 label_col: str = 'ParticipantID',
                  num_workers: int = 1
                  ):
         super(ArcheryBowlingDataModule, self).__init__()
@@ -70,10 +70,11 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
             if self.val_ratio and self.val_ratio > 0:  # not none and > 0
                 modulo = int(1 / self.val_ratio)
                 if modulo > 12 or modulo < 2:
-                    self.logger.warn(
+                    self.logger.info(
                         f'validation split ratio({self.val_ratio}) was set, '
                         f'but would result in either all or no data being available for training. '
                         f'Therefore all Data will be used as train-set!')
+                    from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
                     self.train_dataset = ArcheryBowlingDataset.create_from_dataframe(train_val_df, self.window_size,
                                                                                      self.batch_size, name='TRAIN',
                                                                                      feature_cols=self.features,
@@ -82,6 +83,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                      )
                 else:
                     val_df = train_val_df[train_val_df['repetition'] % modulo == 0]
+                    from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
                     self.val_dataset = ArcheryBowlingDataset.create_from_dataframe(val_df, self.window_size,
                                                                                    self.batch_size, name='VAL',
                                                                                    feature_cols=self.features,
@@ -98,6 +100,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                      label_col=self.label_col)
                     del train_df
             else:
+                from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
                 self.train_dataset = ArcheryBowlingDataset.create_from_dataframe(train_val_df, self.window_size,
                                                                                  self.batch_size, name='TRAIN',
                                                                                  feature_cols=self.features,
@@ -116,6 +119,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
             self.logger.info(f'found {len(test_files)} test-files.')
 
             # create test Dataset
+            from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
             self.test_dataset = ArcheryBowlingDataset.create_from_files(test_files, self.window_size, self.batch_size,
                                                                         name='TEST', feature_cols=self.features,
                                                                         identifier_col=self.identifier_col,

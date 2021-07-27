@@ -1,0 +1,9 @@
+_target_: src.models.archery_bowling_lstm.SimpleLSTM
+
+hidden_size: 100
+n_layers: 3
+dropout: null
+n_classes: 16
+#dynamically overwritten upon instantiation:
+n_features: null
+seq_len: null

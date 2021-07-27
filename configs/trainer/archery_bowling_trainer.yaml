@@ -1,0 +1,4 @@
+defaults:
+  - default.yaml
+
+max_epochs: 500

@@ -1,0 +1,28 @@
+# @package _global_
+# python run.py experiment=bowling_experiment.yaml
+
+defaults:
+  - override /trainer: archery_bowling_trainer.yaml
+  - override /model: archery_bowling_model.yaml
+  - override /datamodule: archery_bowling_datamodule.yaml
+  - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
+  - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
+
+
+
+name: "imAnExperiment01"
+
+trainer:
+  max_epochs: 4
+
+model:
+  n_layers: 1
+  dropout: 0.2
+  hidden_size: 60
+
+datamodule:
+  window_size: 13
+  normalisation: "BothNormalization"
+  szenario: "Bowling"
+
+

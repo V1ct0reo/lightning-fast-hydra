@@ -4,6 +4,9 @@ from typing import List, Union
 import pandas as pd
 from torch.utils.data import Dataset
 
+from src.datamodules.archery_bowling_datamodule import ArcheryBowlingDataModule
+from src.datamodules.datasets.window_makers.sliding_window_maker import MovementDataWindowMaker
+
 
 class ArcheryBowlingDataset(Dataset):
     """
@@ -57,7 +60,7 @@ class ArcheryBowlingDataset(Dataset):
             data=data, seq_identifier_col=identifier_col, window_size=window_size, batch_size=batch_size,
             sorting_cols=sorting_cols, feature_cols=feature_cols, labels_col=label_col, data_is_sorted=False)
 
-    def __getitem__(self, batch_index) -> T_co:
+    def __getitem__(self, batch_index) :
         """
         get a complete tensor of a data-batch. Shape should be (batch_size,window_size,num_features)
         :param batch_index:
