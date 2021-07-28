@@ -7,9 +7,9 @@ import torch
 
 
 class MovementDataWindowMaker:
-    def __init__(self, data: pd.DataFrame, seq_identifier_col: str, window_size: int,
-                 batch_size: int = 1, data_is_sorted=False, labels_col: str = 'ParticipantID',
-                 sorting_cols: [str] = None, feature_cols: [str] = None ):
+    def __init__(self, data: pd.DataFrame, seq_identifier_col: str, window_size: int, batch_size: int = 1,
+                 data_is_sorted=False, labels_col: str = 'ParticipantID', sorting_cols: [str] = None,
+                 feature_cols: [str] = None, shuffle_windows=False):
 
         if not data_is_sorted:
             if sorting_cols is None or len(sorting_cols) < 1:
@@ -30,7 +30,7 @@ class MovementDataWindowMaker:
         illegal_dtypes_found = [x for x in list(data[self.feature_cols].dtypes) if x not in allowed_dtypes]
 
         if len(illegal_dtypes_found) > 0:
-            raise AttributeError( # TODO catch error higher up
+            raise AttributeError(  # TODO catch error higher up
                 f'DataFrame contains an illegal dtype:{[x for x in illegal_dtypes_found]}. Allowed are only {allowed_dtypes}')
 
         self.labels_col = labels_col
@@ -57,6 +57,8 @@ class MovementDataWindowMaker:
             window_start_idxs += range(idx, self.last_window_start_idxs_per_sequenz[seq] + 1)
         self.window_start_idxs = np.array(window_start_idxs)  # EXCLUDE all idx, which would not satisfy a full array
 
+        if shuffle_windows:
+            np.random.shuffle(self.window_start_idxs)
         # TODO maybe shuffle window_start_idxs, since from now on, it dosnt matter, which idx is used for a window.
         #  maybe maybe consider batch balancing though?
 
@@ -92,7 +94,7 @@ class MovementDataWindowMaker:
         """
         batch = np.empty((batch_size, self.window_size, self.num_features), dtype='float32')
         for i, (start, end) in enumerate(self.get_next_batch_idxs(batch_size)):
-            batch[i] = self.data.iloc[start:end]
+            batch[i] = self.data.loc[range(start, end)]
         # batch = np.concatenate(
         #     [self.data.iloc[start:end] for start, end in self.get_next_batch_idxs(batch_size)]
         # ).reshape((batch_size, self.window_size, self.num_features))
@@ -120,16 +122,15 @@ class MovementDataWindowMaker:
 
     def get_batch_from_idx(self, idx, batch_size=None):
         """ used by Dataset class. apparently it asks for a specific data_index inside __getitem__"""
-        # TODO pre allocate an empty array instead of concatenating...
         if not batch_size:
             batch_size = self.batch_size
+        batch = np.empty((batch_size, self.window_size, self.num_features), dtype='float32')
+        original_idxs = np.empty((batch_size, self.window_size), dtype=np.int64)
         slices = self.get_batch_idxs_from_idx(idx, batch_size)
-        batch = np.concatenate(
-            [self.data.iloc[start:end] for start, end in
-             iter(slices)]
-        ).reshape((batch_size, self.window_size, self.num_features))
-
-        return torch.from_numpy(batch).float(), torch.from_numpy(self.y[slices.T[0]])
+        for i, (start, end) in enumerate(iter(slices)):
+            batch[i] = self.data.iloc[range(start, end)]
+            original_idxs[i] = self.data.index[start:end].values
+        return torch.from_numpy(batch).float(), torch.from_numpy(self.y[slices.T[0]]),  original_idxs
 
     @staticmethod
     def _compute_sequenz_start_ids(data: np.ndarray):

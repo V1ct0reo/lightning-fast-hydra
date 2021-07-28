@@ -132,7 +132,7 @@ class LogConfusionMatrix(Callback):
             experiment.log({f"confusion_matrix/{experiment.name}": wandb.Image(plt)}, commit=False)
 
             # according to wandb docs this should also work but it crashes
-            # experiment.log(f{"confusion_matrix/{experiment.name}": plt})
+            # experiment.log(f{"confusion_matrix.yaml/{experiment.name}": plt})
 
             # reset plot
             plt.clf()

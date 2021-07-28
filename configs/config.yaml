@@ -24,7 +24,7 @@ defaults:
 work_dir: ${hydra:runtime.cwd}/../
 
 # path to folder with data
-data_dir: ${work_dir}/DATA/Archery_Bowling/
+data_dir: ${work_dir}/DATA/Archery_Bowling_v2/
 log_dir: ${work_dir}/LOG/${name}/ #runs/${now:%Y-%m-%d--%H-%M-%S}
 name: "somethimgnweafndas"
 status_file: ${log_dir}/status-${name}.json

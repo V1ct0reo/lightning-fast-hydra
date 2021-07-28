@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - override /trainer: archery_bowling_trainer.yaml
+  - override /model: archery_bowling_model.yaml
+  - override /datamodule: archery_bowling_datamodule.yaml
+  - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
+  - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
+
+trainer:
+  max_epochs: 1
+  num_sanity_val_steps: 0
+  limit_val_batches: 0.2
+  limit_train_batches: 0.2
+
+model:
+  n_layers: 1
+  n_classes: 4
+
+datamodule:
+  data_root: ${data_dir}/../mini_Archery/
+  batch_size: 1000
+  val_ratio: 0.5
+  features:
+    - "CenterEyeAnchor_pos_X"             #HMD
+    - "CenterEyeAnchor_pos_Y"
+    - "CenterEyeAnchor_pos_Z"
+
+

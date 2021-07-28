@@ -164,6 +164,7 @@ def train(config: DictConfig) -> Optional[float]:
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):
         log.info("Starting testing!")
         # TODO check if the best model was loaded if process got killed right before testing.
+        # TODO make sure a model is loaded
         trainer.test()
 
     # Make sure everything closed properly

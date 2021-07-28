@@ -34,3 +34,9 @@ class StatusUpdateCallback(Callback):
     def on_fit_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
         self.status.set_testing()
         self.logger.info('=Fitting done=')
+
+    def on_test_epoch_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
+        x=5
+
+    def on_test_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
+        x=6

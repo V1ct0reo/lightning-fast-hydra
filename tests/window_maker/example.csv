@@ -1,0 +1,13 @@
+id;strId;feature0;feature1;feature2;strCol;intId
+0;'me';100;110;120;'someStr';1
+0;'me';101;111;121;'someStr';1
+0;'me';102;112;122;'someStr';1
+0;'me';103;113;123;'someStr';1
+1;'you';200;210;220;'someStr';2
+1;'you';201;211;221;'someStr';2
+1;'you';202;212;222;'someStr';2
+1;'you';203;213;223;'someStr';2
+2;'him';300;310;320;'someStr';3
+2;'him';301;311;321;'someStr';3
+2;'him';302;312;322;'someStr';3
+2;'him';303;313;323;'someStr';3

@@ -22,7 +22,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                  features: List[str] = ['CenterEyeAnchor_pos_X', 'LeftVirtualHand_pos_X', 'RightVirtualHand_pos_X'],
                  identifier_col: str = 'seq_id',
                  label_col: str = 'ParticipantID',
-                 num_workers: int = 1
+                 num_workers: int = 1,
+                 shuffle_windows=False
                  ):
         super(ArcheryBowlingDataModule, self).__init__()
         self.num_workers = num_workers
@@ -36,19 +37,15 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.val_ratio = val_ratio
         self.separate = test
-        self.data_root = Path(data_root) # Path is just more convenient
+        self.data_root = Path(data_root)  # Path is just more convenient
         self.transform = transforms.Compose([
             transforms.ToTensor(),
         ])
+        self.shuffle_windows = shuffle_windows
         self.num_features = len(features)
         self.dims = (self.window_size, self.num_features)
         self.train_dataset, self.val_dataset, self.test_dataset = None, None, None
         self.logger.info('__init__ done.')
-
-    def prepare_data(self) -> None:
-        """used just for i/o stuff. like Disk writing.
-        DO NOT ASSIGN STATES"""
-        pass
 
     def setup(self, stage: Optional[str] = None) -> None:
         # do i want to load all data at once, and slice afterwords?
@@ -58,7 +55,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
         # initiate DatasetObjects and return them
         # return ArcheryBowlingDataset(None, 1, 1), ArcheryBowlingDataset(None, 1, 1), ArcheryBowlingDataset(None, 1, 1)
 
-        if stage in (None, 'fit'):
+        if stage in (None, 'fit'):  # TODO no validation set throws a Nonetype Error on val data loader...
             self.logger.info(f'stage:{stage}. creating Dataset...')
             # regexing or sorting the file path seems to be a pain. therefore ill load all relevant (normalized + session1)
             train_val_files = self.get_file_list(session=1)
@@ -79,7 +76,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                      self.batch_size, name='TRAIN',
                                                                                      feature_cols=self.features,
                                                                                      identifier_col=self.identifier_col,
-                                                                                     label_col=self.label_col
+                                                                                     label_col=self.label_col,
+                                                                                     shuffle_windows=self.shuffle_windows
                                                                                      )
                 else:
                     val_df = train_val_df[train_val_df['repetition'] % modulo == 0]
@@ -88,7 +86,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                    self.batch_size, name='VAL',
                                                                                    feature_cols=self.features,
                                                                                    identifier_col=self.identifier_col,
-                                                                                   label_col=self.label_col)
+                                                                                   label_col=self.label_col,
+                                                                                   shuffle_windows=self.shuffle_windows)
                     del val_df
 
                     train_df = train_val_df[train_val_df['repetition'] % modulo != 0]
@@ -97,7 +96,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                      self.batch_size, name='TRAIN',
                                                                                      feature_cols=self.features,
                                                                                      identifier_col=self.identifier_col,
-                                                                                     label_col=self.label_col)
+                                                                                     label_col=self.label_col,
+                                                                                     shuffle_windows=self.shuffle_windows)
                     del train_df
             else:
                 from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
@@ -105,7 +105,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                  self.batch_size, name='TRAIN',
                                                                                  feature_cols=self.features,
                                                                                  identifier_col=self.identifier_col,
-                                                                                 label_col=self.label_col)
+                                                                                 label_col=self.label_col,
+                                                                                 shuffle_windows=self.shuffle_windows)
                 self.val_dataset = None
 
             self.logger.info('train/val Data initialized!')
@@ -123,7 +124,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
             self.test_dataset = ArcheryBowlingDataset.create_from_files(test_files, self.window_size, self.batch_size,
                                                                         name='TEST', feature_cols=self.features,
                                                                         identifier_col=self.identifier_col,
-                                                                        label_col=self.label_col)
+                                                                        label_col=self.label_col,
+                                                                        shuffle_windows=False)
             self.logger.info('test Data initialized!')
 
         self.logger.info(f'Datasets are setup.')

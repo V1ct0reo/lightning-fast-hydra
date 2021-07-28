@@ -1,0 +1,4 @@
+confusion_matrix:
+  _target_: torchmetrics.classification.ConfusionMatrix
+  num_classes: null #set dynamically
+  normalize: null

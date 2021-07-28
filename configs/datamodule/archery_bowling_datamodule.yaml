@@ -1,3 +1,6 @@
+#defaults:
+#  - override /features: F1.yaml
+
 _target_: src.datamodules.archery_bowling_datamodule.ArcheryBowlingDataModule
 
 data_root: ${data_dir} # infer from config.yaml
@@ -29,3 +32,4 @@ features:
 identifier_col: 'seq_id'            # used to identify individual sequences. gets computed if not found in data
 label_col: 'ParticipantID'
 num_workers: 4
+shuffle_windows: True

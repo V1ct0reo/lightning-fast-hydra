@@ -22,7 +22,8 @@ class ArcheryBowlingDataset(Dataset):
                  identifier_col: str = 'seq_id',
                  label_col: str = 'ParticipantID',
                  sorting_cols=None,
-                 timestamp_col_for_sorting: str = None
+                 timestamp_col_for_sorting: str = None,
+                 shuffle_windows=False
                  ):
 
         if sorting_cols is None:
@@ -56,15 +57,19 @@ class ArcheryBowlingDataset(Dataset):
         self.batch_size = batch_size
         self.window_size = window_size
         self.identifier_col = identifier_col
-        self.window_maker = MovementDataWindowMaker(
-            data=data, seq_identifier_col=identifier_col, window_size=window_size, batch_size=batch_size,
-            sorting_cols=sorting_cols, feature_cols=feature_cols, labels_col=label_col, data_is_sorted=False)
+        self.window_maker = MovementDataWindowMaker(data=data, seq_identifier_col=identifier_col,
+                                                    window_size=window_size, batch_size=batch_size,
+                                                    data_is_sorted=False, labels_col=label_col,
+                                                    sorting_cols=sorting_cols, feature_cols=feature_cols,shuffle_windows=shuffle_windows)
 
-    def __getitem__(self, batch_index) :
+    def __getitem__(self, batch_index):
         """
         get a complete tensor of a data-batch. Shape should be (batch_size,window_size,num_features)
         :param batch_index:
-        :return: (x,Y); where x is a tensor of size (batch_size,window_size,num_features) and Y is a tensor of shape(batch_size)
+        :return: (x , Y , indices to get the samples form original df using loc[]);
+            where x is a tensor of shape(batch_size,window_size,num_features) and
+            Y is a tensor of shape(batch_size) and
+            indices is a array of shape(batchsize,windowsize)
         """
         return self.window_maker.get_batch_from_idx(batch_index, self.batch_size)
 
@@ -91,6 +96,7 @@ class ArcheryBowlingDataset(Dataset):
                           identifier_col: str = 'seq_id',
                           label_col: str = 'ParticipantID',
                           sorting_cols: List[str] = None,
+                          shuffle_windows=False
                           ):
         """
         instantiates Dataset Objects
@@ -106,7 +112,7 @@ class ArcheryBowlingDataset(Dataset):
         """
         all_data = ArcheryBowlingDataModule.load_dataframe_from_multiple_files(file_list)
         return ArcheryBowlingDataset(all_data, window_size, batch_size, name=name, feature_cols=feature_cols,
-                                     identifier_col=identifier_col, label_col=label_col, sorting_cols=sorting_cols)
+                                     identifier_col=identifier_col, label_col=label_col, sorting_cols=sorting_cols,shuffle_windows=shuffle_windows)
 
     @staticmethod
     def create_from_dataframe(data: Union[pd.DataFrame, Path], window_size, batch_size,
@@ -114,9 +120,10 @@ class ArcheryBowlingDataset(Dataset):
                               identifier_col: str = 'seq_id',
                               label_col: str = 'ParticipantID',
                               sorting_cols: List[str] = None,
+                              shuffle_windows=False
                               ):
         """ given a pd.Dataframe or path to a single csv, instantiate a Dataset Object of it"""
         if isinstance(data, Path):
             data = pd.load_csv(data)
         return ArcheryBowlingDataset(data, window_size, batch_size, name=name, feature_cols=feature_cols,
-                                     identifier_col=identifier_col, label_col=label_col, sorting_cols=sorting_cols)
+                                     identifier_col=identifier_col, label_col=label_col, sorting_cols=sorting_cols,shuffle_windows=shuffle_windows)

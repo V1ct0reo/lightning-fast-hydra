@@ -1,0 +1,36 @@
+# @package _global_
+
+defaults:
+  - override /trainer: archery_bowling_trainer.yaml
+  - override /model: archery_bowling_model.yaml
+  - override /datamodule: archery_bowling_datamodule.yaml
+  - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
+  - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
+
+datamodule:
+  data_root: ${data_dir}
+  szenario: 'Archery'
+  normalisation: "HeightNormalization"
+  features:
+    - "CenterEyeAnchor_pos_X"             #HMD
+    - "CenterEyeAnchor_pos_Y"
+    - "CenterEyeAnchor_pos_Z"
+    - "CenterEyeAnchor_euler_X"
+    - "CenterEyeAnchor_euler_Y"
+    - "CenterEyeAnchor_euler_Z"
+    - "LeftVirtualHand_pos_X"             #Left Hand
+    - "LeftVirtualHand_pos_Y"
+    - "LeftVirtualHand_pos_Z"
+    - "LeftVirtualHand_euler_X"
+    - "LeftVirtualHand_euler_Y"
+    - "LeftVirtualHand_euler_Z"
+    - "RightVirtualHand_pos_X"            #Right Hand
+    - "RightVirtualHand_pos_Y"
+    - "RightVirtualHand_pos_Z"
+    - "RightVirtualHand_euler_X"
+    - "RightVirtualHand_euler_Y"
+    - "RightVirtualHand_euler_Z"
+
+trainer:
+  gpus:
+    - 0
