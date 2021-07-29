@@ -7,8 +7,7 @@ defaults:
   - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
   - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
-name: ${datamodule.szenario}_${datamodule.normalisation}_F1
-
+name: ${datamodule.szenario}_${datamodule.normalisation}_F2
 
 datamodule:
   data_root: ${data_dir}
@@ -33,6 +32,7 @@ datamodule:
     - "RightVirtualHand_euler_X"
     - "RightVirtualHand_euler_Y"
     - "RightVirtualHand_euler_Z"
+    - "timestamp_ms"
 
 trainer:
   gpus:

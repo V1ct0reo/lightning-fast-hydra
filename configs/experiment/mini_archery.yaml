@@ -7,11 +7,13 @@ defaults:
   - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
   - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
+name: "123456"
+
 trainer:
   max_epochs: 1
   num_sanity_val_steps: 0
-  limit_val_batches: 0.2
-  limit_train_batches: 0.2
+  limit_val_batches: 0.25
+  limit_train_batches: 0.5
 
 model:
   n_layers: 1
@@ -19,11 +21,17 @@ model:
 
 datamodule:
   data_root: ${data_dir}/../mini_Archery/
-  batch_size: 1000
+  batch_size: 100
   val_ratio: 0.5
   features:
     - "CenterEyeAnchor_pos_X"             #HMD
     - "CenterEyeAnchor_pos_Y"
     - "CenterEyeAnchor_pos_Z"
+    - "timestamp"
+    - "seq_id"
+  sorting_cols:
+    - "seq_id"
+    - "timestamp"
+  window_size: 5
 
 

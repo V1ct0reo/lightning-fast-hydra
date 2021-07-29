@@ -14,7 +14,7 @@ class MovementDataWindowMaker:
         if not data_is_sorted:
             if sorting_cols is None or len(sorting_cols) < 1:
                 raise AttributeError('if input data is not sorted already, sorting_cols need to be specified')
-            data = data.sort_values(by=sorting_cols)
+            data = data.sort_values(list(sorting_cols))
 
         self.y = data[labels_col].values
 
@@ -65,6 +65,7 @@ class MovementDataWindowMaker:
         self.total_num_windows = self.window_start_idxs.size
         # if the last batch surpasses the end of data, it will be filled up from the start of data again
         self.total_num_batches = math.ceil(self.total_num_windows / batch_size)
+        self.sequenz_identifier = seq_identifier_col
 
     # @deprecate
     def get_next_batch_idxs(self, batch_size: int):

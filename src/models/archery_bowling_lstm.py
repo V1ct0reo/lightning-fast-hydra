@@ -32,13 +32,13 @@ class SimpleLSTM(pl.LightningModule):
         self.linear = nn.Linear(hidden_size, n_classes)
 
         self.accuracy = torchmetrics.classification.Accuracy()
-        self.confusion_matrix = MyConfusionMatrix(num_classes=n_classes,compute_on_step=False)
+        self.confusion_matrix = MyConfusionMatrix(num_classes=n_classes, compute_on_step=False)
 
     def forward(self, x) -> Any:
         x = x.view(-1, self.seq_len, self.n_features)  # (batch_size, seq_len, hidden_size)
         lstm_out, _ = self.lstm(x)
         x = self.linear(lstm_out[:, -1])
-        x= x.softmax(dim=-1)
+        x = x.softmax(dim=-1)
         return x
 
     def configure_optimizers(self):  # TODO parameterize?
@@ -49,8 +49,8 @@ class SimpleLSTM(pl.LightningModule):
         loss = F.cross_entropy(prediction, y_true).mean()
         self.log('train_cross-ent_step:', loss)
         self.log('train_acc_step:', self.accuracy(prediction, y_true))
-        self.prev_batch=batch
-        self.prev_batch_idx=batch_idx
+        self.prev_batch = batch
+        self.prev_batch_idx = batch_idx
         return loss
 
     def on_train_epoch_end(self, unused: Optional = None) -> None:
@@ -73,16 +73,22 @@ class SimpleLSTM(pl.LightningModule):
     def test_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
         prediction, y_true, sample_idxs = self._step(batch, batch_idx)
         loss = F.cross_entropy(prediction, y_true).mean()
-        self.confusion_matrix(prediction,y_true)
-        #add predictions and targets to the test metrik
+        self.confusion_matrix(prediction, y_true)
+        self.basic_sequence_confusion_matrix.add_batch(prediction,y_true,sample_idxs)
+        # add predictions and targets to the test metrik
         self.log('test_cross-ent_step:', loss)
         self.log('test_acc_step:', self.accuracy(prediction, y_true))
 
         return loss
 
     def on_test_epoch_end(self) -> None:
-        self.log('test_acc_epoch', self.accuracy.compute())
-        conf_mat=self.confusion_matrix.compute_and_save_csv()
+        # more details on tensorboard hparams tab and special metriks for hparam search:
+        # https://pytorch-lightning.readthedocs.io/en/latest/extensions/logging.html?highlight=hp_metric#logging-hyperparameters
+        test_acc_ep = self.accuracy.compute()
+        self.log('test_acc_epoch', test_acc_ep)
+        self.log('hp_metric', test_acc_ep)
+        conf_mat = self.confusion_matrix.compute_and_save_csv()
+        self.basic_sequence_confusion_matrix.compute_and_save_csv()
         # self.log('test_confusion-matrix_epoch',conf_mat)
 
         # compute the real test metrik

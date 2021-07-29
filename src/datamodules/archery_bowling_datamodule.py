@@ -22,6 +22,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                  features: List[str] = ['CenterEyeAnchor_pos_X', 'LeftVirtualHand_pos_X', 'RightVirtualHand_pos_X'],
                  identifier_col: str = 'seq_id',
                  label_col: str = 'ParticipantID',
+                 sorting_cols:List[str]=None,
                  num_workers: int = 1,
                  shuffle_windows=False
                  ):
@@ -32,6 +33,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
         self.features = features
         self.identifier_col = identifier_col if identifier_col is not None else 'seq_id'
         self.label_col = label_col if label_col is not None else 'ParticipantID'
+        self.sorting_cols=sorting_cols
         self.normalisation = normalisation
         self.window_size = window_size
         self.batch_size = batch_size
@@ -77,7 +79,8 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                      feature_cols=self.features,
                                                                                      identifier_col=self.identifier_col,
                                                                                      label_col=self.label_col,
-                                                                                     shuffle_windows=self.shuffle_windows
+                                                                                     shuffle_windows=self.shuffle_windows,
+                                                                                     sorting_cols=self.sorting_cols
                                                                                      )
                 else:
                     val_df = train_val_df[train_val_df['repetition'] % modulo == 0]
@@ -87,7 +90,9 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                    feature_cols=self.features,
                                                                                    identifier_col=self.identifier_col,
                                                                                    label_col=self.label_col,
-                                                                                   shuffle_windows=self.shuffle_windows)
+                                                                                   shuffle_windows=self.shuffle_windows,
+                                                                                   sorting_cols=self.sorting_cols
+                                                                                   )
                     del val_df
 
                     train_df = train_val_df[train_val_df['repetition'] % modulo != 0]
@@ -97,7 +102,9 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                      feature_cols=self.features,
                                                                                      identifier_col=self.identifier_col,
                                                                                      label_col=self.label_col,
-                                                                                     shuffle_windows=self.shuffle_windows)
+                                                                                     shuffle_windows=self.shuffle_windows,
+                                                                                     sorting_cols=self.sorting_cols
+                                                                                     )
                     del train_df
             else:
                 from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
@@ -106,7 +113,9 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                                  feature_cols=self.features,
                                                                                  identifier_col=self.identifier_col,
                                                                                  label_col=self.label_col,
-                                                                                 shuffle_windows=self.shuffle_windows)
+                                                                                 shuffle_windows=self.shuffle_windows,
+                                                                                 sorting_cols=self.sorting_cols
+                                                                                 )
                 self.val_dataset = None
 
             self.logger.info('train/val Data initialized!')
@@ -125,7 +134,9 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                                                                         name='TEST', feature_cols=self.features,
                                                                         identifier_col=self.identifier_col,
                                                                         label_col=self.label_col,
-                                                                        shuffle_windows=False)
+                                                                        shuffle_windows=False,
+                                                                        sorting_cols=self.sorting_cols
+                                                                        )
             self.logger.info('test Data initialized!')
 
         self.logger.info(f'Datasets are setup.')

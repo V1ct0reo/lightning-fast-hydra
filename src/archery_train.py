@@ -16,15 +16,13 @@ from pytorch_lightning import (
 from pytorch_lightning.loggers import LightningLoggerBase
 
 from src.callbacks.status_callback import StatusUpdateCallback
+from src.models.metrics.sequence_confusion_matrix import BasicSequenceConfusionMatrix
 from src.status.status import TrainJobStatus
 from src.utils import utils
 
 from src.status.status import StatusEnum
 
 log = utils.get_logger(__name__)
-
-
-
 
 
 def train(config: DictConfig) -> Optional[float]:
@@ -41,7 +39,6 @@ def train(config: DictConfig) -> Optional[float]:
     # Set seed for random number generators in pytorch, numpy and python.random
     if "seed" in config:
         seed_everything(config.seed, workers=True)
-
 
     # Handle status stuff....
     log.info(f"Looking for status Files")
@@ -97,6 +94,8 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
     datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)
+    log.info('setting up fit stage already, since i need to access the windowmaker for the metrik')
+    datamodule.setup('fit')
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
@@ -106,6 +105,9 @@ def train(config: DictConfig) -> Optional[float]:
     config.model.n_features = datamodule.num_features
     config.model.seq_len = datamodule.window_size
     model: LightningModule = hydra.utils.instantiate(config.model)
+    model.basic_sequence_confusion_matrix = BasicSequenceConfusionMatrix(num_classes=config.model.n_classes,
+                                                                         compute_on_step=False,
+                                                                         window_maker=datamodule.train_dataset.window_maker)
 
     # Init lightning callbacks
     callbacks: List[Callback] = []
@@ -114,7 +116,7 @@ def train(config: DictConfig) -> Optional[float]:
             if "_target_" in cb_conf:
                 log.info(f"Instantiating callback <{cb_conf._target_}>")
                 callbacks.append(hydra.utils.instantiate(cb_conf))
-    callbacks.append(StatusUpdateCallback(status,config.trainer.max_epochs))
+    callbacks.append(StatusUpdateCallback(status, config.trainer.max_epochs))
     # Init lightning loggers
     logger: List[LightningLoggerBase] = []
     if "logger" in config:

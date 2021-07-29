@@ -7,20 +7,13 @@ defaults:
   - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
   - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
-name: ${datamodule.szenario}_${datamodule.normalisation}_F1
-
+name: ${datamodule.szenario}_${datamodule.normalisation}_F3
 
 datamodule:
   data_root: ${data_dir}
   szenario: 'Archery'
   normalisation: "HeightNormalization"
   features:
-    - "CenterEyeAnchor_pos_X"             #HMD
-    - "CenterEyeAnchor_pos_Y"
-    - "CenterEyeAnchor_pos_Z"
-    - "CenterEyeAnchor_euler_X"
-    - "CenterEyeAnchor_euler_Y"
-    - "CenterEyeAnchor_euler_Z"
     - "LeftVirtualHand_pos_X"             #Left Hand
     - "LeftVirtualHand_pos_Y"
     - "LeftVirtualHand_pos_Z"
@@ -35,5 +28,5 @@ datamodule:
     - "RightVirtualHand_euler_Z"
 
 trainer:
-  gpus:
-    - 0
+  gpus: 0
+#    - 0

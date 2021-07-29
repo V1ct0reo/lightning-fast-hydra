@@ -630,7 +630,7 @@ class TestMovementDataWindowMakerTest(unittest.TestCase):
             self.assertTrue(actual_batch[i, 0, 1] <= actual_batch[i, 1, 1],f'\n{actual_batch[i]},\n{actual_batch[i+1]}')
             self.assertTrue(actual_batch[i, 1, 1] <= actual_batch[i, 2, 1],f'\n{actual_batch[i]},\n{actual_batch[i+1]}')
             # the actuall label for this window matches the label youd get pulling the sample from the original df with the idx form get_batch
-            self.assertTrue(actual_y[i]==shuffled_df.loc[actual_idx[i],'intId'].iloc[0])
+            self.assertTrue(actual_y[i]==shuffled_df.loc[actual_idx[i],'intId'].iloc[0],f'{actual_y[i]} - {shuffled_df.loc[actual_idx[i],"intId"].iloc[0]}')
 
 
     def WindowMakerState(self, ex_last_window_idxs, ex_num_entries, ex_seq_lens, ex_seq_start_idxs,

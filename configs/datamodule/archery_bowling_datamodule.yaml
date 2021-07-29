@@ -31,5 +31,8 @@ features:
   - "RightControllerAnchor_euler_Z"
 identifier_col: 'seq_id'            # used to identify individual sequences. gets computed if not found in data
 label_col: 'ParticipantID'
+sorting_cols:
+  - "seq_id"
+  - "timestamp_ms"
 num_workers: 4
 shuffle_windows: True

@@ -22,11 +22,11 @@ defaults:
 # so it's useful to have this path as a special variable
 # learn more here: https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
 work_dir: ${hydra:runtime.cwd}/../
+name: 'mainConfigName'
 
 # path to folder with data
 data_dir: ${work_dir}/DATA/Archery_Bowling_v2/
 log_dir: ${work_dir}/LOG/${name}/ #runs/${now:%Y-%m-%d--%H-%M-%S}
-name: "somethimgnweafndas"
 status_file: ${log_dir}/status-${name}.json
 
 # use `python run.py debug=true` for easy debugging!
