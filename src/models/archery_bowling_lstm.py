@@ -32,7 +32,7 @@ class SimpleLSTM(pl.LightningModule):
         self.linear = nn.Linear(hidden_size, n_classes)
 
         self.accuracy = torchmetrics.classification.Accuracy()
-        self.confusion_matrix = MyConfusionMatrix(num_classes=n_classes, compute_on_step=False)
+        self.confusion_matrix = MyConfusionMatrix(num_classes=n_classes, compute_on_step=True)
 
     def forward(self, x) -> Any:
         x = x.view(-1, self.seq_len, self.n_features)  # (batch_size, seq_len, hidden_size)

@@ -22,7 +22,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
                  features: List[str] = ['CenterEyeAnchor_pos_X', 'LeftVirtualHand_pos_X', 'RightVirtualHand_pos_X'],
                  identifier_col: str = 'seq_id',
                  label_col: str = 'ParticipantID',
-                 sorting_cols:List[str]=None,
+                 sorting_cols: List[str] = None,
                  num_workers: int = 1,
                  shuffle_windows=False
                  ):
@@ -33,7 +33,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
         self.features = features
         self.identifier_col = identifier_col if identifier_col is not None else 'seq_id'
         self.label_col = label_col if label_col is not None else 'ParticipantID'
-        self.sorting_cols=sorting_cols
+        self.sorting_cols = sorting_cols
         self.normalisation = normalisation
         self.window_size = window_size
         self.batch_size = batch_size
@@ -130,13 +130,17 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
 
             # create test Dataset
             from src.datamodules.datasets.archery_bowling_dataset import ArcheryBowlingDataset
-            self.test_dataset = ArcheryBowlingDataset.create_from_files(test_files, self.window_size, self.batch_size,
-                                                                        name='TEST', feature_cols=self.features,
-                                                                        identifier_col=self.identifier_col,
-                                                                        label_col=self.label_col,
-                                                                        shuffle_windows=False,
-                                                                        sorting_cols=self.sorting_cols
-                                                                        )
+            test_df = ArcheryBowlingDataModule.load_dataframe_from_multiple_files(test_files)
+            computed_batch_size = self.batch_size
+            rest = len(test_df) % self.batch_size
+            computed_batch_size -= rest
+            self.test_dataset = ArcheryBowlingDataset.create_from_dataframe(test_df, self.window_size, computed_batch_size,
+                                                                            name='TEST', feature_cols=self.features,
+                                                                            identifier_col=self.identifier_col,
+                                                                            label_col=self.label_col,
+                                                                            shuffle_windows=False,
+                                                                            sorting_cols=self.sorting_cols
+                                                                            )
             self.logger.info('test Data initialized!')
 
         self.logger.info(f'Datasets are setup.')
@@ -152,7 +156,7 @@ class ArcheryBowlingDataModule(pl.LightningDataModule):
         for i in file_list:
             tmp = pd.read_csv(i)
             df_list.append(tmp)
-        return pd.concat(df_list)
+        return pd.concat(df_list, ignore_index=True)
 
     def _create_info_dict(self):
         return {

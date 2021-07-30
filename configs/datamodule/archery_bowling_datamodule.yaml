@@ -34,5 +34,5 @@ label_col: 'ParticipantID'
 sorting_cols:
   - "seq_id"
   - "timestamp_ms"
-num_workers: 4
+num_workers: 1
 shuffle_windows: True

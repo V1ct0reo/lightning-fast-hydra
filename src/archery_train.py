@@ -1,4 +1,5 @@
 import json
+import os
 import signal
 import sys
 from pathlib import Path
@@ -16,6 +17,7 @@ from pytorch_lightning import (
 from pytorch_lightning.loggers import LightningLoggerBase
 
 from src.callbacks.status_callback import StatusUpdateCallback
+from src.datamodules.archery_bowling_datamodule import ArcheryBowlingDataModule
 from src.models.metrics.sequence_confusion_matrix import BasicSequenceConfusionMatrix
 from src.status.status import TrainJobStatus
 from src.utils import utils
@@ -40,25 +42,30 @@ def train(config: DictConfig) -> Optional[float]:
     if "seed" in config:
         seed_everything(config.seed, workers=True)
 
+    is_new_run=True
     # Handle status stuff....
     log.info(f"Looking for status Files")
-    expected_path_for_status_file = Path(config.status_file)
-    if expected_path_for_status_file.exists():
+    cwd = Path(os.getcwd())
+    expected_path_for_status_file = list(cwd.glob(f'*.json'))
+    if len(expected_path_for_status_file) > 0:
+        expected_path_for_status_file = expected_path_for_status_file[0]
         log.info(f'Status found @ {expected_path_for_status_file}')
         try:
             status = TrainJobStatus.load_status(expected_path_for_status_file)
             log.info('Status loaded.')
+            is_new_run = False
         except json.decoder.JSONDecodeError as e:
             log.error('!Decoding error while trying to read status!', e)
         except Exception as e:
             log.error('!Severe error while trying to read status!', e)
             raise SystemExit()
     else:
+        expected_path_for_status_file = cwd.joinpath(f'status.json')
         log.info(f'creating new Status-file @ {expected_path_for_status_file}')
         status = TrainJobStatus(
             status_path=str(expected_path_for_status_file),
             ckpt_dir=None,
-            log_dir=config.log_dir,
+            log_dir=str(cwd),
             data_set=config.data_dir,
             hw_devices_used=[]
         )
@@ -93,9 +100,9 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
-    datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)
-    log.info('setting up fit stage already, since i need to access the windowmaker for the metrik')
-    datamodule.setup('fit')
+    datamodule: ArcheryBowlingDataModule = hydra.utils.instantiate(config.datamodule)
+    log.info('setting up test stage already, since i need to access the windowmaker for the metrik')
+    datamodule.setup('test')
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
@@ -107,7 +114,7 @@ def train(config: DictConfig) -> Optional[float]:
     model: LightningModule = hydra.utils.instantiate(config.model)
     model.basic_sequence_confusion_matrix = BasicSequenceConfusionMatrix(num_classes=config.model.n_classes,
                                                                          compute_on_step=False,
-                                                                         window_maker=datamodule.train_dataset.window_maker)
+                                                                         window_maker=datamodule.test_dataset.window_maker)
 
     # Init lightning callbacks
     callbacks: List[Callback] = []
@@ -133,15 +140,16 @@ def train(config: DictConfig) -> Optional[float]:
     )
 
     # Send some parameters from config to all lightning loggers
-    log.info("Logging hyperparameters!")
-    utils.log_hyperparameters(
-        config=config,
-        model=model,
-        datamodule=datamodule,
-        trainer=trainer,
-        callbacks=callbacks,
-        logger=logger,
-    )
+    if is_new_run:
+        log.info("Logging hyperparameters!")
+        utils.log_hyperparameters(
+            config=config,
+            model=model,
+            datamodule=datamodule,
+            trainer=trainer,
+            callbacks=callbacks,
+            logger=logger,
+        )
 
     # Train the model
     remaining_epochs = config.trainer.max_epochs - max(status.epochs, 0)
@@ -165,9 +173,11 @@ def train(config: DictConfig) -> Optional[float]:
     # Evaluate model on test set, using the best model achieved during training
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):
         log.info("Starting testing!")
+        # log.info(f'loading model from best ckpt path: {status.best_ckpt_path}')
+        # model = LightningModule.load_from_checkpoint(status.best_ckpt_path)
         # TODO check if the best model was loaded if process got killed right before testing.
         # TODO make sure a model is loaded
-        trainer.test()
+        trainer.test()#test_dataloaders=datamodule.test_dataloader())
 
     # Make sure everything closed properly
     log.info("Finalizing!")

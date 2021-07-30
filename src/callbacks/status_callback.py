@@ -36,7 +36,7 @@ class StatusUpdateCallback(Callback):
         self.logger.info('=Fitting done=')
 
     def on_test_epoch_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
-        x=5
+        self.status.set_best_ckpt_path(trainer.checkpoint_callback.best_model_path)
 
     def on_test_end(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
-        x=6
+        pass

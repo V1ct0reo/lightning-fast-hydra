@@ -41,6 +41,7 @@ class MovementDataWindowMaker:
         self.window_pointer: int = 0
         self.sequenz_lens: np.ndarray = np.diff(np.append(self.sequenz_start_idxs, self.num_entries)).astype(int)
         self.batch_size = batch_size
+        self.seq_id_list = data[seq_identifier_col]
         self.data = data[self.feature_cols]
 
         if np.any(self.sequenz_lens < self.window_size):
@@ -59,12 +60,11 @@ class MovementDataWindowMaker:
 
         if shuffle_windows:
             np.random.shuffle(self.window_start_idxs)
-        # TODO maybe shuffle window_start_idxs, since from now on, it dosnt matter, which idx is used for a window.
         #  maybe maybe consider batch balancing though?
 
         self.total_num_windows = self.window_start_idxs.size
         # if the last batch surpasses the end of data, it will be filled up from the start of data again
-        self.total_num_batches = math.ceil(self.total_num_windows / batch_size)
+        self.total_num_batches = int(self.total_num_windows / batch_size)
         self.sequenz_identifier = seq_identifier_col
 
     # @deprecate
@@ -106,14 +106,20 @@ class MovementDataWindowMaker:
             batch_size = self.batch_size
         idx = idx * batch_size
         batch_idxs = np.empty((batch_size, 2), dtype=np.uintp)
-        if (idx + batch_size) >= len(self.window_start_idxs):
-            windows_available = self.total_num_windows - idx
-            batch_idxs[:windows_available, 0] = self.window_start_idxs[
-                                                idx:idx + windows_available]
-            idx = 0
-            batch_idxs[windows_available:, 0] = self.window_start_idxs[
-                                                idx:idx + batch_size - windows_available]
-            batch_idxs[:, 1] = batch_idxs[:, 0] + self.window_size
+        if (idx + batch_size) > len(self.window_start_idxs):
+            raise AttributeError(
+                f'Not enough windows left to pull another batch of size {batch_size} in Dataset. \n'
+                f'num_windows:\t{self.total_num_windows}\n'
+                f'idx:\t{idx}\n'
+                f'batch_size:\t{batch_size}\n'
+                f'len(window_start_idxs:\t{len(self.window_start_idxs)}')
+            # windows_available = self.total_num_windows - idx
+            # batch_idxs[:windows_available, 0] = self.window_start_idxs[
+            #                                     idx:idx + windows_available]
+            # idx = 0
+            # batch_idxs[windows_available:, 0] = self.window_start_idxs[
+            #                                     idx:idx + batch_size - windows_available]
+            # batch_idxs[:, 1] = batch_idxs[:, 0] + self.window_size
 
         else:
             batch_idxs[:, 0] = self.window_start_idxs[idx:idx + batch_size]
@@ -131,7 +137,7 @@ class MovementDataWindowMaker:
         for i, (start, end) in enumerate(iter(slices)):
             batch[i] = self.data.iloc[range(start, end)]
             original_idxs[i] = self.data.index[start:end].values
-        return torch.from_numpy(batch).float(), torch.from_numpy(self.y[slices.T[0]]),  original_idxs
+        return torch.from_numpy(batch).float(), torch.from_numpy(self.y[slices.T[0]]), original_idxs
 
     @staticmethod
     def _compute_sequenz_start_ids(data: np.ndarray):

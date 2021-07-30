@@ -7,15 +7,12 @@ defaults:
   - override /callbacks: default.yaml # set this to null if you don't want to use callbacks
   - override /logger: tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
-name: "experiemint_TBA"
 
-# log_dir: ${work_dir}/../LOG/${final_name} #runs/${now:%Y-%m-%d--%H-%M-%S}
-# status_file: ${log_dir}/status-${final_name}.json
 trainer:
   max_epochs: 1
   num_sanity_val_steps: 0
-#  limit_val_batches: 0.5
-#  limit_train_batches: 0.5
+  limit_val_batches: 0.25
+  limit_train_batches: 0.5
 
 model:
   n_layers: 1
