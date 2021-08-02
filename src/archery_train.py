@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import hydra
+import wandb
 from omegaconf import DictConfig
 from pytorch_lightning import (
     Callback,
@@ -42,7 +43,7 @@ def train(config: DictConfig) -> Optional[float]:
     if "seed" in config:
         seed_everything(config.seed, workers=True)
 
-    is_new_run=True
+    is_new_run = True
     # Handle status stuff....
     log.info(f"Looking for status Files")
     cwd = Path(os.getcwd())
@@ -101,8 +102,8 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
     datamodule: ArcheryBowlingDataModule = hydra.utils.instantiate(config.datamodule)
-    log.info('setting up test stage already, since i need to access the windowmaker for the metrik')
-    datamodule.setup('test')
+    log.info('setting up fit stage already, since i need to access the windowmaker for the seq_confusion_mat')
+    datamodule.setup('fit')
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
@@ -112,17 +113,21 @@ def train(config: DictConfig) -> Optional[float]:
     config.model.n_features = datamodule.num_features
     config.model.seq_len = datamodule.window_size
     model: LightningModule = hydra.utils.instantiate(config.model)
-    model.basic_sequence_confusion_matrix = BasicSequenceConfusionMatrix(num_classes=config.model.n_classes,
-                                                                         compute_on_step=False,
-                                                                         window_maker=datamodule.test_dataset.window_maker)
-
+    # model.basic_sequence_confusion_matrix = BasicSequenceConfusionMatrix(num_classes=config.model.n_classes,
+    #                                                                      compute_on_step=False,
+    #                                                                      window_maker=datamodule.test_dataset.window_maker)
+    # wandb.login(key='4631776b948ff1b794c99e015259b0812df58e59',force=True)
     # Init lightning callbacks
     callbacks: List[Callback] = []
     if "callbacks" in config:
-        for _, cb_conf in config.callbacks.items():
+        for k, cb_conf in config.callbacks.items():
+            # Seq_conf_mat callback needs some intel about the differente total sequences..
             if "_target_" in cb_conf:
                 log.info(f"Instantiating callback <{cb_conf._target_}>")
-                callbacks.append(hydra.utils.instantiate(cb_conf))
+                if 'log_seq_confusion_matrix' == k:
+                    callbacks.append(hydra.utils.instantiate(cb_conf, val_window_maker=datamodule.val_dataset.window_maker))
+                else:
+                    callbacks.append(hydra.utils.instantiate(cb_conf))
     callbacks.append(StatusUpdateCallback(status, config.trainer.max_epochs))
     # Init lightning loggers
     logger: List[LightningLoggerBase] = []
@@ -169,7 +174,15 @@ def train(config: DictConfig) -> Optional[float]:
     # -----------------------------
     #  TEST
     # -----------------------------
-
+    # log.info("Finalizing! before Testing...")
+    # utils.finish(
+    #     config=config,
+    #     model=model,
+    #     datamodule=datamodule,
+    #     trainer=trainer,
+    #     callbacks=callbacks,
+    #     logger=logger,
+    # )
     # Evaluate model on test set, using the best model achieved during training
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):
         log.info("Starting testing!")
@@ -177,7 +190,7 @@ def train(config: DictConfig) -> Optional[float]:
         # model = LightningModule.load_from_checkpoint(status.best_ckpt_path)
         # TODO check if the best model was loaded if process got killed right before testing.
         # TODO make sure a model is loaded
-        trainer.test()#test_dataloaders=datamodule.test_dataloader())
+        trainer.test()  # test_dataloaders=datamodule.test_dataloader())
 
     # Make sure everything closed properly
     log.info("Finalizing!")

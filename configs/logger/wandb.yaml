@@ -2,11 +2,11 @@
 
 wandb:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
-  project: "template-tests"
-  name: null
+  project: ${project_id}
+  name: ${run_name}
   save_dir: "."
   offline: False # set True to store all logs only locally
-  id: null # pass correct id to resume experiment!
+  id: null # pass correct id to resume experiment! TODO handle training restart on cluster
   # entity: ""  # set to name of your wandb team or just remove it
   log_model: False
   prefix: ""

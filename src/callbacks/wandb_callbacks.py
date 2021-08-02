@@ -3,6 +3,8 @@ import os
 from typing import List
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import seaborn as sn
 import torch
 import wandb
@@ -105,7 +107,7 @@ class LogConfusionMatrix(Callback):
     ):
         """Gather data from single batch."""
         if self.ready:
-            self.preds.append(outputs["preds"])
+            self.preds.append(outputs["preds"].argmax(axis=1))
             self.targets.append(outputs["targets"])
 
     def on_validation_epoch_end(self, trainer, pl_module):
@@ -116,6 +118,102 @@ class LogConfusionMatrix(Callback):
 
             preds = torch.cat(self.preds).cpu().numpy()
             targets = torch.cat(self.targets).cpu().numpy()
+
+            confusion_matrix = metrics.confusion_matrix(y_true=targets, y_pred=preds,normalize='true')
+
+            # set figure size
+            plt.figure(figsize=(14, 8))
+
+            # set labels size
+            sn.set(font_scale=1.4)
+
+            # set font size
+            sn.heatmap(confusion_matrix, annot=True, annot_kws={"size": 8}, fmt="g")
+
+            # names should be uniqe or else charts from different experiments in wandb will overlap
+            experiment.log({f"val/confusion_matrix/{experiment.name}": wandb.Image(plt)}, commit=False)
+
+            # according to wandb docs this should also work but it crashes
+            # experiment.log(f{"confusion_matrix.yaml/{experiment.name}": plt})
+
+            # reset plot
+            plt.clf()
+
+            self.preds.clear()
+            self.targets.clear()
+
+
+class LogSequenceConfusionMatrix(Callback):
+    """Generate confusion matrix every epoch and send it to wandb.
+    Expects validation step to return predictions and targets.
+    """
+
+    def __init__(self, val_window_maker):
+
+        self.ready = True
+        self.window_maker = val_window_maker
+        self.seq_id_col = self.window_maker.sequenz_identifier
+        self.seq_id_list = self.window_maker.seq_id_list
+        # first_frame_idx = self.window_maker.window_size - 1
+        # self.seq_id_preds_targtes = pd.DataFrame(
+        #     columns=['seq_id', 'predicted', 'target'], index=range(first_frame_idx, self.window_maker.num_entries))
+
+    def on_sanity_check_start(self, trainer, pl_module) -> None:
+        self.ready = False
+
+    def on_sanity_check_end(self, trainer, pl_module):
+        """Start executing this callback only after all validation sanity checks end."""
+        self.ready = True
+
+    def on_validation_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
+        # clear the old seq_pred_targets dataframe...
+        if self.ready:
+            self.preds = []
+            self.targets = []
+            first_frame_idx = self.window_maker.window_size - 1
+            self.seq_id_preds_targtes = pd.DataFrame(
+                columns=['seq_id', 'predicted', 'target'], index=self.seq_id_list.index)
+
+    def on_validation_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
+        """Gather data from single batch."""
+        if self.ready:
+            # self.preds.append(outputs["preds"])
+            # self.targets.append(outputs["targets"])
+
+            predicted_frames_idxs = outputs['sample_idxs'][:, -1]
+            predicted_frames_idxs = predicted_frames_idxs.cpu().numpy()
+            predicted_labels = outputs['preds'].argmax(axis=1)
+            predicted_labels = predicted_labels.cpu().numpy()
+            target_batch_labels = outputs['targets'].cpu().numpy()
+            self.seq_id_preds_targtes.loc[predicted_frames_idxs] = np.array([
+                self.seq_id_list[predicted_frames_idxs],  # the seq_id for this window
+                predicted_labels,  # the prediction for this window
+                target_batch_labels  # the target for this window
+            ]).T
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        """Generate confusion matrix."""
+        if self.ready:
+            logger = get_wandb_logger(trainer)
+            experiment = logger.experiment
+
+            preds = []  # np.zeros((self.num_classes))
+            targets = []  # np.zeros((self.num_classes))
+            for seq in sorted(self.seq_id_preds_targtes.seq_id.unique()):
+                if not isinstance(seq, int):
+                    continue
+                seq_df = self.seq_id_preds_targtes[self.seq_id_preds_targtes['seq_id'] == seq]
+                majority = seq_df.mode(axis=0, dropna=True)
+                t = majority['target'].values[0]
+                if not isinstance(t, int):
+                    t = t[0]
+                p = majority['predicted'].values[0]
+                if not isinstance(p, int):
+                    p = p[0]
+                targets.append(t)
+                preds.append(p)
 
             confusion_matrix = metrics.confusion_matrix(y_true=targets, y_pred=preds)
 
@@ -129,7 +227,82 @@ class LogConfusionMatrix(Callback):
             sn.heatmap(confusion_matrix, annot=True, annot_kws={"size": 8}, fmt="g")
 
             # names should be uniqe or else charts from different experiments in wandb will overlap
-            experiment.log({f"confusion_matrix/{experiment.name}": wandb.Image(plt)}, commit=False)
+            experiment.log({f"val/seq_confusion_matrix/{experiment.name}": wandb.Image(plt)}, commit=False)
+
+            # according to wandb docs this should also work but it crashes
+            # experiment.log(f{"confusion_matrix.yaml/{experiment.name}": plt})
+
+            # reset plot
+            plt.clf()
+
+            self.preds.clear()
+            self.targets.clear()
+
+
+    def on_test_start(self, trainer: 'pl.Trainer', pl_module: 'pl.LightningModule') -> None:
+        self.window_maker = trainer.datamodule.test_dataset.window_maker
+        self.seq_id_list=self.window_maker.seq_id_list
+        self.preds = []
+        self.targets = []
+        first_frame_idx = self.window_maker.window_size - 1
+        self.seq_id_preds_targtes = pd.DataFrame(
+            columns=['seq_id', 'predicted', 'target'], index=self.seq_id_list.index)
+
+
+    def on_test_batch_end(
+        self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx
+    ):
+        """Gather data from single batch."""
+        if self.ready:
+            # self.preds.append(outputs["preds"])
+            # self.targets.append(outputs["targets"])
+
+            predicted_frames_idxs = outputs['sample_idxs'][:, -1]
+            predicted_frames_idxs = predicted_frames_idxs.cpu().numpy()
+            predicted_labels = outputs['preds'].argmax(axis=1)
+            predicted_labels = predicted_labels.cpu().numpy()
+            target_batch_labels = outputs['targets'].cpu().numpy()
+            self.seq_id_preds_targtes.loc[predicted_frames_idxs] = np.array([
+                self.seq_id_list[predicted_frames_idxs],  # the seq_id for this window
+                predicted_labels,  # the prediction for this window
+                target_batch_labels  # the target for this window
+            ]).T
+
+    def on_test_epoch_end(self, trainer, pl_module):
+        """Generate confusion matrix."""
+        if self.ready:
+            logger = get_wandb_logger(trainer)
+            experiment = logger.experiment
+
+            preds = []  # np.zeros((self.num_classes))
+            targets = []  # np.zeros((self.num_classes))
+            for seq in sorted(self.seq_id_preds_targtes.seq_id.unique()):
+                if not isinstance(seq, int):
+                    continue
+                seq_df = self.seq_id_preds_targtes[self.seq_id_preds_targtes['seq_id'] == seq]
+                majority = seq_df.mode(axis=0, dropna=True)
+                t = majority['target'].values[0]
+                if not isinstance(t, int):
+                    t = t[0]
+                p = majority['predicted'].values[0]
+                if not isinstance(p, int):
+                    p = p[0]
+                targets.append(t)
+                preds.append(p)
+
+            confusion_matrix = metrics.confusion_matrix(y_true=targets, y_pred=preds)
+
+            # set figure size
+            plt.figure(figsize=(14, 8))
+
+            # set labels size
+            sn.set(font_scale=1.4)
+
+            # set font size
+            sn.heatmap(confusion_matrix, annot=True, annot_kws={"size": 8}, fmt="g")
+
+            # names should be uniqe or else charts from different experiments in wandb will overlap
+            experiment.log({f"test/seq_confusion_matrix/{experiment.name}": wandb.Image(plt)}, commit=False)
 
             # according to wandb docs this should also work but it crashes
             # experiment.log(f{"confusion_matrix.yaml/{experiment.name}": plt})

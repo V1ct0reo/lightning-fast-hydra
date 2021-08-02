@@ -5,8 +5,8 @@ defaults:
   - trainer: archery_bowling_trainer.yaml
   - model: archery_bowling_model.yaml
   - datamodule: archery_bowling_datamodule.yaml
-  - callbacks: default.yaml # set this to null if you don't want to use callbacks
-  - logger: rethink_tensorboard.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
+  - callbacks: my_wandb.yaml # set this to null if you don't want to use callbacks
+  - logger: wandb.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
   - experiment: null
   - hparams_search: null
@@ -32,11 +32,6 @@ run_name: ??? # "dummy_run_name_01"
 data_dir: ${work_dir}/../DATA/Archery_Bowling_v2/
 # log_dir: ??? #${work_dir}/../LOG/${final_name} #runs/${now:%Y-%m-%d--%H-%M-%S}
 # status_file: ??? #${log_dir}/status-${final_name}.json
-
-trainer:
-  max_epochs: 1
-  num_sanity_val_steps: 0
-  limit_train_batches: 0.25
 
 # use `python run.py debug=true` for easy debugging!
 # this will run 1 train, val and test loop with only 1 batch

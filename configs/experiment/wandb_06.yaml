@@ -8,30 +8,24 @@ defaults:
   - override /callbacks: my_wandb.yaml # set this to null if you don't want to use callbacks
   - override /logger: wandb.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
 
-run_name: "fixing_confmat_10"
-project_id: "wandb-testing"
+run_name: "06"
+project_id: "Archery_Bowling"
 
 trainer:
   gpus:
     - 1 # 1 for GTX 2070
 #    - 0 # 0 for GTX 2080
-  max_epochs: 300
+  max_epochs: 500
 
 
 model:
-  dropout: 0.3
+  dropout: 0
 
 datamodule:
   data_root: ${data_dir}
   szenario: 'Archery'
   normalisation: "HeightNormalization"
   features:
-    - "CenterEyeAnchor_pos_X"             #HMD
-    - "CenterEyeAnchor_pos_Y"
-    - "CenterEyeAnchor_pos_Z"
-    - "CenterEyeAnchor_euler_X"
-    - "CenterEyeAnchor_euler_Y"
-    - "CenterEyeAnchor_euler_Z"
     - "LeftVirtualHand_pos_X"             #Left Hand
     - "LeftVirtualHand_pos_Y"
     - "LeftVirtualHand_pos_Z"

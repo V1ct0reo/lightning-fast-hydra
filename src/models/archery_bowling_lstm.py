@@ -47,25 +47,26 @@ class SimpleLSTM(pl.LightningModule):
     def training_step(self, batch, batch_idx) -> STEP_OUTPUT:
         prediction, y_true, sample_idxs = self._step(batch, batch_idx)
         loss = F.cross_entropy(prediction, y_true).mean()
-        self.log('train_cross-ent_step:', loss)
-        self.log('train_acc_step:', self.accuracy(prediction, y_true))
+        self.log('train/cross-ent/step:', loss)
+        self.log('train/acc/step:', self.accuracy(prediction, y_true))
         self.prev_batch = batch
         self.prev_batch_idx = batch_idx
-        return loss
+
+        return {'loss': loss, 'preds': prediction, 'targets': y_true}
 
     def on_train_epoch_end(self, unused: Optional = None) -> None:
-        self.log('train_acc_epoch', self.accuracy.compute())
+        self.log('train/acc/epoch', self.accuracy.compute())
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
         prediction, y_true, sample_idxs = self._step(batch, batch_idx)
         loss = F.cross_entropy(prediction, y_true).mean()
-        self.log('val_cross-ent_step:', loss)
-        self.log('val_acc_step:', self.accuracy(prediction, y_true))
+        self.log('val/cross-ent/step:', loss)
+        self.log('val/acc/step:', self.accuracy(prediction, y_true))
 
-        return loss
+        return {'loss': loss, 'preds': prediction, 'targets': y_true, 'sample_idxs':sample_idxs}
 
     def on_validation_epoch_end(self) -> None:
-        self.log('val_acc_epoch', self.accuracy.compute())
+        self.log('val/acc/epoch', self.accuracy.compute())
 
     def on_test_start(self) -> None:
         pass
@@ -73,22 +74,22 @@ class SimpleLSTM(pl.LightningModule):
     def test_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
         prediction, y_true, sample_idxs = self._step(batch, batch_idx)
         loss = F.cross_entropy(prediction, y_true).mean()
-        self.confusion_matrix(prediction, y_true)
-        self.basic_sequence_confusion_matrix.add_batch(prediction,y_true,sample_idxs)
+        #self.confusion_matrix(prediction, y_true)
+        # self.basic_sequence_confusion_matrix.add_batch(prediction, y_true, sample_idxs)
         # add predictions and targets to the test metrik
-        self.log('test_cross-ent_step:', loss)
-        self.log('test_acc_step:', self.accuracy(prediction, y_true))
+        self.log('test/cross-ent/step:', loss)
+        self.log('test/acc/step:', self.accuracy(prediction, y_true))
 
-        return loss
+        return {'loss': loss, 'preds': prediction, 'targets': y_true,'sample_idxs':sample_idxs}
 
     def on_test_epoch_end(self) -> None:
         # more details on tensorboard hparams tab and special metriks for hparam search:
         # https://pytorch-lightning.readthedocs.io/en/latest/extensions/logging.html?highlight=hp_metric#logging-hyperparameters
         test_acc_ep = self.accuracy.compute()
-        self.log('test_acc_epoch', test_acc_ep)
+        self.log('test/acc/epoch', test_acc_ep)
         self.log('hp_metric', test_acc_ep)
         conf_mat = self.confusion_matrix.compute_and_save_csv()
-        self.basic_sequence_confusion_matrix.compute_and_save_csv()
+        # self.basic_sequence_confusion_matrix.compute_and_save_csv()
         # self.log('test_confusion-matrix_epoch',conf_mat)
 
         # compute the real test metrik

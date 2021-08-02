@@ -9,8 +9,8 @@ sweep:
 job:
   name: ${name}
   env_set:
-    EXAMPLE_VAR: "example_value"
+    WANDB_API_KEY: "4631776b948ff1b794c99e015259b0812df58e59"
   config:
     override_dirname:
       kv_sep: "_"
-      item_sep: "__"
+      item_sep: "__"'
