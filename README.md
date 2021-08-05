@@ -1,3 +1,4 @@
+python3.8 tf_run.py run_name=new_docker_base_keras
 <div align="center">
 
 # Lightning-Hydra-Template

@@ -43,7 +43,7 @@ def train(config: DictConfig) -> Optional[float]:
     if "seed" in config:
         seed_everything(config.seed, workers=True)
 
-    is_new_run = True
+    no_status_file_was_found = True
     # Handle status stuff....
     log.info(f"Looking for status Files")
     cwd = Path(os.getcwd())
@@ -54,7 +54,7 @@ def train(config: DictConfig) -> Optional[float]:
         try:
             status = TrainJobStatus.load_status(expected_path_for_status_file)
             log.info('Status loaded.')
-            is_new_run = False
+            no_status_file_was_found = False
         except json.decoder.JSONDecodeError as e:
             log.error('!Decoding error while trying to read status!', e)
         except Exception as e:
@@ -113,10 +113,7 @@ def train(config: DictConfig) -> Optional[float]:
     config.model.n_features = datamodule.num_features
     config.model.seq_len = datamodule.window_size
     model: LightningModule = hydra.utils.instantiate(config.model)
-    # model.basic_sequence_confusion_matrix = BasicSequenceConfusionMatrix(num_classes=config.model.n_classes,
-    #                                                                      compute_on_step=False,
-    #                                                                      window_maker=datamodule.test_dataset.window_maker)
-    # wandb.login(key='4631776b948ff1b794c99e015259b0812df58e59',force=True)
+
     # Init lightning callbacks
     callbacks: List[Callback] = []
     if "callbacks" in config:
@@ -125,7 +122,8 @@ def train(config: DictConfig) -> Optional[float]:
             if "_target_" in cb_conf:
                 log.info(f"Instantiating callback <{cb_conf._target_}>")
                 if 'log_seq_confusion_matrix' == k:
-                    callbacks.append(hydra.utils.instantiate(cb_conf, val_window_maker=datamodule.val_dataset.window_maker))
+                    callbacks.append(
+                        hydra.utils.instantiate(cb_conf, val_window_maker=datamodule.val_dataset.window_maker))
                 else:
                     callbacks.append(hydra.utils.instantiate(cb_conf))
     callbacks.append(StatusUpdateCallback(status, config.trainer.max_epochs))
@@ -145,7 +143,7 @@ def train(config: DictConfig) -> Optional[float]:
     )
 
     # Send some parameters from config to all lightning loggers
-    if is_new_run:
+    if no_status_file_was_found:
         log.info("Logging hyperparameters!")
         utils.log_hyperparameters(
             config=config,
@@ -158,6 +156,9 @@ def train(config: DictConfig) -> Optional[float]:
 
     # Train the model
     remaining_epochs = config.trainer.max_epochs - max(status.epochs, 0)
+    # TODO maybe skip this condition, inorder to properly init the trainer for testing,
+    #  even if training was completed already.
+    #  Otherwise, we'd have to manually load the ckpt for testing
     if remaining_epochs > 0:
         log.info(f"Starting training for {remaining_epochs} epochs!")
         try:
@@ -174,15 +175,7 @@ def train(config: DictConfig) -> Optional[float]:
     # -----------------------------
     #  TEST
     # -----------------------------
-    # log.info("Finalizing! before Testing...")
-    # utils.finish(
-    #     config=config,
-    #     model=model,
-    #     datamodule=datamodule,
-    #     trainer=trainer,
-    #     callbacks=callbacks,
-    #     logger=logger,
-    # )
+
     # Evaluate model on test set, using the best model achieved during training
     if config.get("test_after_training") and not config.trainer.get("fast_dev_run"):
         log.info("Starting testing!")

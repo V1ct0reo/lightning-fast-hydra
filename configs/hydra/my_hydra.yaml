@@ -10,6 +10,7 @@ job:
   name: ${name}
   env_set:
     WANDB_API_KEY: "4631776b948ff1b794c99e015259b0812df58e59"
+    CUDA_VISIBLE_DEVICES: "0"
   config:
     override_dirname:
       kv_sep: "_"

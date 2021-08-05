@@ -1,0 +1,7 @@
+a_value: 3
+a_list:
+  - 2
+  - 4
+  - 5
+another_layer:
+  b_value: 8

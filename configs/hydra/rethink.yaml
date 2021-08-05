@@ -5,16 +5,24 @@
 run:
   dir: ${hydra.job.name}
 sweep:
-  dir: mulitrunX/
-  subdir: ${hydra.job.name}
+  dir: .
+  subdir: ${hydra.job.name}/${hydra.job.override_dirname}
 
 # you can set here environment variables that are universal for all users
 # for system specific variables (like data paths) it's better to use .env file!
 job:
   name: ${log_dir}
   env_set:
+    WANDB_API_KEY: "4631776b948ff1b794c99e015259b0812df58e59"
+    CUDA_VISIBLE_DEVICES: "1"
     EXAMPLE_VAR: "example_value"
   config:
     override_dirname:
       kv_sep: "_"
       item_sep: "__"
+      exclude_keys:
+        - experiment
+        - run_name
+        - project_id
+        - MODEL_HANDLE
+        - data_dir

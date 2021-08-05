@@ -11,9 +11,8 @@ pandas = "*"
 PyYAML = "*"
 rich = "*"
 tables = "*"
-
+opencv-python = "*"
 # -- ML --
-tensorboard = "*"
 pytorch-lightning = "*"
 torchvision = "*"
 dacite = "*"
@@ -21,12 +20,10 @@ seaborn = "*"
 sklearn = "*"
 scikit-learn = "*"
 wandb = "*"
-
 # --hydra--
 hydra-core = "*"
 hydra-colorlog = "*"
 hydra-optuna-sweeper = "*"
-
 # -- random stuff
 python-dotenv = "*"
 pytest = "*"
@@ -34,9 +31,13 @@ sh = "*"
 jupyterlab = "*"
 pudb = "*"
 pre-commit = "*"
-pipblack = "*"
 isort = "*"
 flake8 = "*"
+# -- tensorflow --
+tensorflow = "==2.3"
+# keras = "*"
+# tensorboard = {version="2.4"}
+tensorflow-hub = "*"
 
 [dev-packages]
 
