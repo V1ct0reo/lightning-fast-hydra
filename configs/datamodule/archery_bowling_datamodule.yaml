@@ -4,7 +4,7 @@
 _target_: src.datamodules.archery_bowling_datamodule.ArcheryBowlingDataModule
 
 data_root: ${data_dir} # infer from config.yaml
-test: True              # load and compute files from session2
+test: ${test_after_training}              # load and compute files from session2
 val_ratio: 0.2          # try save some files from session1 for validation. (evenly distributed: .5 -> evey 2nd repetition)
 batch_size: 10000
 window_size: 10

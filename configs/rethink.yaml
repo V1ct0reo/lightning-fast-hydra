@@ -33,6 +33,10 @@ data_dir: ${work_dir}/../DATA/Archery_Bowling_v2/
 # log_dir: ??? #${work_dir}/../LOG/${final_name} #runs/${now:%Y-%m-%d--%H-%M-%S}
 # status_file: ??? #${log_dir}/status-${final_name}.json
 
+
+seed: 19960209
+
+
 # use `python run.py debug=true` for easy debugging!
 # this will run 1 train, val and test loop with only 1 batch
 # equivalent to running `python run.py trainer.fast_dev_run=true`

@@ -65,6 +65,7 @@ class TrainJobStatus:
     log_dir: str
     data_set: Optional[str]
     status_path: str
+    wandb_id:str
     ckpt_dir: Optional[str] = None
     best_ckpt_path: Optional[str] = None
     latest_ckpt_path: Optional[str] = None

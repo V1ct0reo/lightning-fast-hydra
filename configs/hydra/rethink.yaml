@@ -14,7 +14,8 @@ job:
   name: ${log_dir}
   env_set:
     WANDB_API_KEY: "4631776b948ff1b794c99e015259b0812df58e59"
-    CUDA_VISIBLE_DEVICES: "1"
+  #  CUDA_VISIBLE_DEVICES: "1"
+    CUDA_VISIBLE_DEVICES: "0"
     EXAMPLE_VAR: "example_value"
   config:
     override_dirname:

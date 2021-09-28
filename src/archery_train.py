@@ -28,6 +28,7 @@ from src.status.status import StatusEnum
 log = utils.get_logger(__name__)
 
 
+
 def train(config: DictConfig) -> Optional[float]:
     """Contains training pipeline.
     Instantiates all PyTorch Lightning objects from config.
@@ -43,45 +44,7 @@ def train(config: DictConfig) -> Optional[float]:
     if "seed" in config:
         seed_everything(config.seed, workers=True)
 
-    no_status_file_was_found = True
-    # Handle status stuff....
-    log.info(f"Looking for status Files")
-    cwd = Path(os.getcwd())
-    expected_path_for_status_file = list(cwd.glob(f'*.json'))
-    if len(expected_path_for_status_file) > 0:
-        expected_path_for_status_file = expected_path_for_status_file[0]
-        log.info(f'Status found @ {expected_path_for_status_file}')
-        try:
-            status = TrainJobStatus.load_status(expected_path_for_status_file)
-            log.info('Status loaded.')
-            no_status_file_was_found = False
-        except json.decoder.JSONDecodeError as e:
-            log.error('!Decoding error while trying to read status!', e)
-        except Exception as e:
-            log.error('!Severe error while trying to read status!', e)
-            raise SystemExit()
-    else:
-        expected_path_for_status_file = cwd.joinpath(f'status.json')
-        log.info(f'creating new Status-file @ {expected_path_for_status_file}')
-        status = TrainJobStatus(
-            status_path=str(expected_path_for_status_file),
-            ckpt_dir=None,
-            log_dir=str(cwd),
-            data_set=config.data_dir,
-            hw_devices_used=[]
-        )
-        status.save(expected_path_for_status_file)
-
-    if status.status == StatusEnum.FINISHED:
-        log.error('this job is marked as FINISHED. Exiting now...')
-        sys.exit(0)
-    if not status.get_latest_ckpt_path():
-        config.trainer.resume_from_checkpoint = None
-        ckpt_dir = config.callbacks.model_checkpoint.dirpath
-        status.set_ckpt_dir(ckpt_dir)
-        status.set_latest_ckpt_path(Path(ckpt_dir).joinpath('last.ckpt'))
-    else:
-        config.trainer.resume_from_checkpoint = str(status.latest_ckpt_path)
+    no_status_file_was_found, status = _handle_status_file(config)
 
     def trap_signals():
         signal.signal(signal.SIGINT, _handle_kill)
@@ -118,7 +81,7 @@ def train(config: DictConfig) -> Optional[float]:
     callbacks: List[Callback] = []
     if "callbacks" in config:
         for k, cb_conf in config.callbacks.items():
-            # Seq_conf_mat callback needs some intel about the differente total sequences..
+            # Seq_conf_mat callback needs some intel about the different total sequences..
             if "_target_" in cb_conf:
                 log.info(f"Instantiating callback <{cb_conf._target_}>")
                 if 'log_seq_confusion_matrix' == k:
@@ -127,10 +90,14 @@ def train(config: DictConfig) -> Optional[float]:
                 else:
                     callbacks.append(hydra.utils.instantiate(cb_conf))
     callbacks.append(StatusUpdateCallback(status, config.trainer.max_epochs))
+
     # Init lightning loggers
     logger: List[LightningLoggerBase] = []
     if "logger" in config:
-        for _, lg_conf in config.logger.items():
+        for k, lg_conf in config.logger.items():
+            if 'wandb' == k:
+                lg_conf.id = status.wandb_id
+                log.info(f'setting wandb_id to resume logging {status.wandb_id}')
             if "_target_" in lg_conf:
                 log.info(f"Instantiating logger <{lg_conf._target_}>")
                 logger.append(hydra.utils.instantiate(lg_conf))
@@ -203,3 +170,50 @@ def train(config: DictConfig) -> Optional[float]:
     optimized_metric = config.get("optimized_metric")
     if optimized_metric:
         return trainer.callback_metrics[optimized_metric]
+
+
+def _handle_status_file(config):
+    # Handle status stuff....
+    no_status_file_was_found = True
+    log.info(f"Looking for status Files")
+    cwd = Path(os.getcwd())
+    expected_path_for_status_file = list(cwd.glob(f'*.json'))
+    if len(expected_path_for_status_file) > 0:
+        expected_path_for_status_file = expected_path_for_status_file[0]
+        log.info(f'Status found @ {expected_path_for_status_file}')
+        try:
+            status = TrainJobStatus.load_status(expected_path_for_status_file)
+            log.info('Status loaded.')
+            no_status_file_was_found = False
+        except json.decoder.JSONDecodeError as e:
+            log.error('!Decoding error while trying to read status!', e)
+        except Exception as e:
+            log.error('!Severe error while trying to read status!', e)
+            raise SystemExit()
+    else:
+        expected_path_for_status_file = cwd.joinpath(f'status.json')
+        wandb_id = wandb.util.generate_id()
+        log.info(f'generating new wandb id: {wandb_id}')
+        log.info(f'creating new Status-file @ {expected_path_for_status_file}')
+        status = TrainJobStatus(
+            status_path=str(expected_path_for_status_file),
+            ckpt_dir=None,
+            log_dir=str(cwd),
+            data_set=config.data_dir,
+            hw_devices_used=[],
+            wandb_id=wandb_id
+        )
+        status.save(expected_path_for_status_file)
+
+    if status.status == StatusEnum.FINISHED:
+        log.error('this job is marked as FINISHED. Exiting now...')
+        sys.exit(0)
+
+    if not status.get_latest_ckpt_path():
+        config.trainer.resume_from_checkpoint = None
+        ckpt_dir = config.callbacks.model_checkpoint.dirpath
+        status.set_ckpt_dir(ckpt_dir)
+        status.set_latest_ckpt_path(Path(ckpt_dir).joinpath('last.ckpt'))
+    else:
+        config.trainer.resume_from_checkpoint = str(status.latest_ckpt_path)
+    return no_status_file_was_found, status

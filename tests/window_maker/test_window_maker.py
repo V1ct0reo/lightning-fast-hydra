@@ -633,6 +633,12 @@ class TestMovementDataWindowMakerTest(unittest.TestCase):
             self.assertTrue(actual_y[i]==shuffled_df.loc[actual_idx[i],'intId'].iloc[0],f'{actual_y[i]} - {shuffled_df.loc[actual_idx[i],"intId"].iloc[0]}')
 
 
+
+
+
+
+
+
     def WindowMakerState(self, ex_last_window_idxs, ex_num_entries, ex_seq_lens, ex_seq_start_idxs,
                          ex_total_windows, ex_window_size, ex_window_start_idxs, ex_total_batches, mdwm):
         self.assertEqual(mdwm.num_entries, ex_num_entries, 'num_entries not set correct')

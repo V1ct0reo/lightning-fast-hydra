@@ -2,12 +2,7 @@
 
 # specify here default training configuration
 defaults:
-#  - trainer: archery_bowling_trainer.yaml
-#  - model: archery_bowling_model.yaml
-#  - datamodule: archery_bowling_datamodule.yaml
-#  - callbacks: my_wandb.yaml # set this to null if you don't want to use callbacks
-#  - logger: wandb.yaml # set logger here or use command line (e.g. `python run.py logger=wandb`)
-  - random_test: random_test
+
   - experiment: null
   - hparams_search: null
 
@@ -24,18 +19,18 @@ defaults:
 work_dir: ${hydra:runtime.cwd}
 log_dir: ${work_dir}/../TF-LOG/${project_id}/${run_name}/
 
-project_id: tensorflow-Lexion #"rethink_project_81"
+project_id: Lexion_oneforall #"rethink_project_81"
 run_name: ??? # "dummy_run_name_01"
 
-batch_size: 64
+batch_size: 16
 IMAGE_SIZE: 224
 N_CLASSES: 20 # TODO infer
 LEARN_RATE: 0.001
 INITIAL_EPOCHS: 5
-FINE_TUNE_EPOCHS: 100
+FINE_TUNE_EPOCHS: 50
 DROPOUT: 0.2
-MODEL_HANDLE: 'https://tfhub.dev/google/tf2-preview/mobilenet_v2/feature_vector/4'
-
+BASE_MODEL: 'MobileNet_v2'
+ONLY_LOCATIONS: True
 
 trainer: null
 model: null
@@ -44,7 +39,7 @@ callbacks: null
 logger: null
 
 # path to folder with data
-data_dir: ${work_dir}/../DATA/Lexion-Images/
+data_dir: ${work_dir}/../DATA/Lexion-Locations/
 
 # use `python run.py debug=true` for easy debugging!
 # this will run 1 train, val and test loop with only 1 batch

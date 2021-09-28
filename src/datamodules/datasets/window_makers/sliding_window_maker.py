@@ -63,7 +63,6 @@ class MovementDataWindowMaker:
         #  maybe maybe consider batch balancing though?
 
         self.total_num_windows = self.window_start_idxs.size
-        # if the last batch surpasses the end of data, it will be filled up from the start of data again
         self.total_num_batches = int(self.total_num_windows / batch_size)
         self.sequenz_identifier = seq_identifier_col
 
@@ -105,14 +104,15 @@ class MovementDataWindowMaker:
         if not batch_size:
             batch_size = self.batch_size
         idx = idx * batch_size
-        batch_idxs = np.empty((batch_size, 2), dtype=np.uintp)
         if (idx + batch_size) > len(self.window_start_idxs):
-            raise AttributeError(
-                f'Not enough windows left to pull another batch of size {batch_size} in Dataset. \n'
-                f'num_windows:\t{self.total_num_windows}\n'
-                f'idx:\t{idx}\n'
-                f'batch_size:\t{batch_size}\n'
-                f'len(window_start_idxs:\t{len(self.window_start_idxs)}')
+            # not enough windows left for a full batch
+            batch_size = len(self.window_start_idxs)
+            # raise AttributeError(
+            #     f'Not enough windows left to pull another batch of size {batch_size} in Dataset. \n'
+            #     f'num_windows:\t{self.total_num_windows}\n'
+            #     f'idx:\t{idx}\n'
+            #     f'batch_size:\t{batch_size}\n'
+            #     f'len(window_start_idxs:\t{len(self.window_start_idxs)}')
             # windows_available = self.total_num_windows - idx
             # batch_idxs[:windows_available, 0] = self.window_start_idxs[
             #                                     idx:idx + windows_available]
@@ -120,10 +120,9 @@ class MovementDataWindowMaker:
             # batch_idxs[windows_available:, 0] = self.window_start_idxs[
             #                                     idx:idx + batch_size - windows_available]
             # batch_idxs[:, 1] = batch_idxs[:, 0] + self.window_size
-
-        else:
-            batch_idxs[:, 0] = self.window_start_idxs[idx:idx + batch_size]
-            batch_idxs[:, 1] = batch_idxs[:, 0] + self.window_size
+        batch_idxs = np.empty((batch_size, 2), dtype=np.uintp)
+        batch_idxs[:, 0] = self.window_start_idxs[idx:idx + batch_size]
+        batch_idxs[:, 1] = batch_idxs[:, 0] + self.window_size
 
         return batch_idxs
 

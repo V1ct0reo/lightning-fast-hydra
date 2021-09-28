@@ -21,11 +21,11 @@ def main(config: DictConfig):
     # - easier access to debug mode
     # - forcing debug friendly configuration
     # You can safely get rid of this line if you don't want those
-    utils.extras(config)
+    #utils.extras(config)
 
     # Pretty print config using Rich library
-    if config.get("print_config"):
-        utils.print_config(config, resolve=True)
+   # if config.get("print_config"):
+    #    utils.print_config(config, resolve=True)
     from hydra.core.hydra_config import HydraConfig
     log.info(f'HydraConfig.get().job:\n{HydraConfig.get().job}\n')
     log.info(f'hydra.utils.get_original_cwd()\n{hydra.utils.get_original_cwd()}\n')
@@ -33,6 +33,9 @@ def main(config: DictConfig):
     print(f"to_absolute_path('/foo')  : {hydra.utils.to_absolute_path('/foo')}")
     print(f"config.name  : {config.run_name}")
     print(f"os.cwd  : {os.getcwd()}")
+    for k,v in dict(config).items():
+        print(k,':\t',v)
+    #print(os.environ['CUDA_VISIBLE_DEVICES'])
 
 
 
